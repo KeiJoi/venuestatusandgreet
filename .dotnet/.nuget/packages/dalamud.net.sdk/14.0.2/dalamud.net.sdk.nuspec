@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Dalamud.NET.Sdk</id>
+    <version>14.0.2</version>
+    <authors>XIVLauncher and Dalamud contributors</authors>
+    <license type="expression">MIT</license>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <projectUrl>https://github.com/goatcorp/Dalamud.NET.Sdk</projectUrl>
+    <description>MSBuild .NET Sdk for Dalamud plugins.</description>
+    <tags>MSBuildSdk</tags>
+    <packageTypes>
+      <packageType name="MSBuildSdk" />
+    </packageTypes>
+    <repository type="git" url="https://github.com/goatcorp/Dalamud.NET.Sdk" commit="5927630ab8f79666845e354a535b6c7f12d0a8a1" />
+  </metadata>
+</package>

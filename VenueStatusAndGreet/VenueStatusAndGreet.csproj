@@ -1,0 +1,20 @@
+<Project Sdk="Dalamud.NET.Sdk/14.0.2">
+  <PropertyGroup>
+    <AssemblyName>VenueStatusAndGreet</AssemblyName>
+    <RootNamespace>VenueStatusAndGreet</RootNamespace>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DalamudApiLevel>14</DalamudApiLevel>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ECommons" Version="3.0.1.6" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.3" />
+    <PackageReference Include="ClosedXML" Version="0.104.2" />
+  </ItemGroup>
+</Project>

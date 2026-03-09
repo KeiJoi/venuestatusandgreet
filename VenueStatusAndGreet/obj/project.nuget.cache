@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "dgSpecHash": "AiVx1xfjaCo=",
+  "success": true,
+  "projectFilePath": "C:\\FFXIVplugs\\venuestatusandgreet\\VenueStatusAndGreet\\VenueStatusAndGreet.csproj",
+  "expectedPackageFiles": [
+    "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\closedxml\\0.104.2\\closedxml.0.104.2.nupkg.sha512",
+    "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\closedxml.parser\\1.2.0\\closedxml.parser.1.2.0.nupkg.sha512",
+    "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\dalamudpackager\\14.0.2\\dalamudpackager.14.0.2.nupkg.sha512",
+    "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\documentformat.openxml\\3.1.1\\documentformat.openxml.3.1.1.nupkg.sha512",
+    "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\documentformat.openxml.framework\\3.1.1\\documentformat.openxml.framework.3.1.1.nupkg.sha512",
+    "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\dotnet.reproduciblebuilds\\1.2.39\\dotnet.reproduciblebuilds.1.2.39.nupkg.sha512",
+    "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\ecommons\\3.0.1.6\\ecommons.3.0.1.6.nupkg.sha512",
+    "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\excelnumberformat\\1.1.0\\excelnumberformat.1.1.0.nupkg.sha512",
+    "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\microsoft.data.sqlite\\9.0.3\\microsoft.data.sqlite.9.0.3.nupkg.sha512",
+    "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\microsoft.data.sqlite.core\\9.0.3\\microsoft.data.sqlite.core.9.0.3.nupkg.sha512",
+    "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\rbush\\4.0.0\\rbush.4.0.0.nupkg.sha512",
+    "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\sixlabors.fonts\\1.0.0\\sixlabors.fonts.1.0.0.nupkg.sha512",
+    "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\sqlitepclraw.bundle_e_sqlite3\\2.1.10\\sqlitepclraw.bundle_e_sqlite3.2.1.10.nupkg.sha512",
+    "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\sqlitepclraw.core\\2.1.10\\sqlitepclraw.core.2.1.10.nupkg.sha512",
+    "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\sqlitepclraw.lib.e_sqlite3\\2.1.10\\sqlitepclraw.lib.e_sqlite3.2.1.10.nupkg.sha512",
+    "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\sqlitepclraw.provider.e_sqlite3\\2.1.10\\sqlitepclraw.provider.e_sqlite3.2.1.10.nupkg.sha512",
+    "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\system.io.packaging\\8.0.1\\system.io.packaging.8.0.1.nupkg.sha512"
+  ],
+  "logs": []
+}

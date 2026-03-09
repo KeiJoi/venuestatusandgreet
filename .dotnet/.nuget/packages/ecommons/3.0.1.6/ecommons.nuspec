@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>ECommons</id>
+    <version>3.0.1.6</version>
+    <title>ECommons</title>
+    <authors>NightmareXIV</authors>
+    <projectUrl>https://github.com/NightmareXIV/ECommons</projectUrl>
+    <description>Package Description</description>
+    <repository type="git" url="https://github.com/NightmareXIV/ECommons" commit="636eb6855dadd58161c64cba809086e622bbfcd8" />
+    <dependencies>
+      <group targetFramework="net9.0-windows7.0" />
+    </dependencies>
+  </metadata>
+</package>

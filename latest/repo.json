@@ -1,0 +1,30 @@
+[
+  {
+    "Author": "Kay Joy",
+    "Name": "Venue Status and Greet",
+    "Punchline": "Venue analytics and smart greetings in one window.",
+    "Description": "Tracks venue guests, greeting history, and nightly statistics with export support.",
+    "InternalName": "VenueStatusAndGreet",
+    "AssemblyVersion": "1.0.0.0",
+    "ApplicableVersion": "any",
+    "DalamudApiLevel": 11,
+    "IsTestingExclusive": false,
+    "RepoUrl": "https://github.com/KeiJoi/venuestatusandgreet",
+    "Tags": [
+      "venue",
+      "analytics",
+      "greet",
+      "roleplay"
+    ],
+    "CategoryTags": [
+      "UI",
+      "Social",
+      "Utility"
+    ],
+    "LastUpdate": 1773033970,
+    "DownloadLinkInstall": "https://raw.githubusercontent.com/KeiJoi/venuestatusandgreet/main/latest/VenueStatusAndGreet.zip",
+    "DownloadLinkUpdate": "https://raw.githubusercontent.com/KeiJoi/venuestatusandgreet/main/latest/VenueStatusAndGreet.zip",
+    "DownloadLinkTesting": "https://raw.githubusercontent.com/KeiJoi/venuestatusandgreet/main/latest/VenueStatusAndGreet.zip",
+    "IconUrl": "https://raw.githubusercontent.com/KeiJoi/venuestatusandgreet/main/latest/icon.png"
+  }
+]

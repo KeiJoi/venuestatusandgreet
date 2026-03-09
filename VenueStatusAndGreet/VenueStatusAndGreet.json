@@ -1,0 +1,16 @@
+{
+  "Author": "kyro_",
+  "Name": "Venue Status and Greet",
+  "InternalName": "VenueStatusAndGreet",
+  "AssemblyVersion": "1.0.0.0",
+  "Description": "Tracks venue guests, greeting history, and nightly statistics with export support.",
+  "ApplicableVersion": "any",
+  "DalamudApiLevel": 14,
+  "Punchline": "Venue analytics and smart greetings in one window.",
+  "RepoUrl": "",
+  "Tags": [
+    "venue",
+    "analytics",
+    "greet"
+  ]
+}
