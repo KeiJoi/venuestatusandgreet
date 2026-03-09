@@ -7,7 +7,7 @@
     "InternalName": "VenueStatusAndGreet",
     "AssemblyVersion": "1.0.0.0",
     "ApplicableVersion": "any",
-    "DalamudApiLevel": 11,
+    "DalamudApiLevel": 14,
     "IsTestingExclusive": false,
     "RepoUrl": "https://github.com/KeiJoi/venuestatusandgreet",
     "Tags": [
@@ -21,10 +21,10 @@
       "Social",
       "Utility"
     ],
-    "LastUpdate": 1773033970,
-    "DownloadLinkInstall": "https://raw.githubusercontent.com/KeiJoi/venuestatusandgreet/main/latest/VenueStatusAndGreet.zip",
-    "DownloadLinkUpdate": "https://raw.githubusercontent.com/KeiJoi/venuestatusandgreet/main/latest/VenueStatusAndGreet.zip",
-    "DownloadLinkTesting": "https://raw.githubusercontent.com/KeiJoi/venuestatusandgreet/main/latest/VenueStatusAndGreet.zip",
-    "IconUrl": "https://raw.githubusercontent.com/KeiJoi/venuestatusandgreet/main/latest/icon.png"
+    "LastUpdate": 1773045206,
+    "DownloadLinkInstall": "https://raw.githubusercontent.com/KeiJoi/venuestatusandgreet/refs/heads/main/latest/VenueStatusAndGreet.zip",
+    "DownloadLinkUpdate": "https://raw.githubusercontent.com/KeiJoi/venuestatusandgreet/refs/heads/main/latest/VenueStatusAndGreet.zip",
+    "DownloadLinkTesting": "https://raw.githubusercontent.com/KeiJoi/venuestatusandgreet/refs/heads/main/latest/VenueStatusAndGreet.zip",
+    "IconUrl": "https://raw.githubusercontent.com/KeiJoi/venuestatusandgreet/refs/heads/main/latest/icon.png"
   }
 ]
