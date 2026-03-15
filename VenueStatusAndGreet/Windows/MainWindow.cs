@@ -17,6 +17,7 @@ public sealed class MainWindow : Window, IDisposable
     private string presetLine1Buffer = string.Empty;
     private string presetLine2Buffer = string.Empty;
     private string presetLine3Buffer = string.Empty;
+    private string presetLine4Buffer = string.Empty;
 
     private int? selectedPresetId;
     private List<GreetPreset> cachedPresets = [];
@@ -140,9 +141,7 @@ public sealed class MainWindow : Window, IDisposable
         var isVenueOpen = this.plugin.Configuration.IsVenueOpen;
         if (ImGui.Checkbox("Venue Open", ref isVenueOpen))
         {
-            this.plugin.Configuration.IsVenueOpen = isVenueOpen;
-            this.plugin.Tracker.SetVenueOpen(isVenueOpen, DateTime.UtcNow);
-            this.plugin.SaveConfiguration();
+            this.plugin.SetVenueOpen(isVenueOpen, DateTime.UtcNow);
         }
 
         ImGui.SameLine();
@@ -200,6 +199,15 @@ public sealed class MainWindow : Window, IDisposable
             this.plugin.Configuration.VenueRadiusYalms = radius;
             this.plugin.ApplyTrackingFilters(DateTime.UtcNow);
         }
+
+        var pollSeconds = this.plugin.Configuration.TrackingPollIntervalSeconds;
+        if (ImGui.InputInt("Tracking Poll Interval (seconds)", ref pollSeconds))
+        {
+            this.plugin.Configuration.TrackingPollIntervalSeconds = Math.Clamp(pollSeconds, 5, 3600);
+            this.plugin.ApplyTrackingFilters(DateTime.UtcNow);
+        }
+
+        ImGui.TextDisabled($"Default is 900 seconds (15 minutes). Current: {this.plugin.Configuration.TrackingPollIntervalSeconds / 60.0:F1} minutes.");
 
         var territoryMatch = this.plugin.Tracker.TrackingTerritoryMatches;
         ImGui.TextUnformatted($"Locked Territory: {this.plugin.Tracker.LockedTerritoryId?.ToString() ?? "None"}");
@@ -542,7 +550,8 @@ public sealed class MainWindow : Window, IDisposable
         ImGui.InputText("Line 1", ref this.presetLine1Buffer, 220);
         ImGui.InputText("Line 2", ref this.presetLine2Buffer, 220);
         ImGui.InputText("Line 3", ref this.presetLine3Buffer, 220);
-        ImGui.TextDisabled("Each line is sent with a 2-second pause between lines.");
+        ImGui.InputText("Line 4 / Emote Command", ref this.presetLine4Buffer, 220);
+        ImGui.TextDisabled("Lines 1-3 are tells. Line 4 runs as a raw chat command after the tell lines, with the same 2-second spacing.");
 
         if (ImGui.Button("Save / Update Preset"))
         {
@@ -552,7 +561,8 @@ public sealed class MainWindow : Window, IDisposable
                     this.presetNameBuffer,
                     this.presetLine1Buffer,
                     this.presetLine2Buffer,
-                    this.presetLine3Buffer);
+                    this.presetLine3Buffer,
+                    this.presetLine4Buffer);
                 this.selectedPresetId = id;
                 this.RefreshPresetCache();
             }
@@ -576,6 +586,7 @@ public sealed class MainWindow : Window, IDisposable
         this.presetLine1Buffer = preset.Line1;
         this.presetLine2Buffer = preset.Line2;
         this.presetLine3Buffer = preset.Line3;
+        this.presetLine4Buffer = preset.Line4;
     }
 
     private void RefreshPresetCacheIfStale()
@@ -733,3 +744,5 @@ public sealed class MainWindow : Window, IDisposable
         return $"{duration.Minutes}m {duration.Seconds:D2}s";
     }
 }
+
+

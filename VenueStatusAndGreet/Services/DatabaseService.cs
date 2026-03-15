@@ -111,7 +111,8 @@ public sealed class DatabaseService : IDisposable
                     name TEXT NOT NULL UNIQUE,
                     line1 TEXT NOT NULL DEFAULT '',
                     line2 TEXT NOT NULL DEFAULT '',
-                    line3 TEXT NOT NULL DEFAULT ''
+                    line3 TEXT NOT NULL DEFAULT '',
+                    line4 TEXT NOT NULL DEFAULT ''
                 );");
 
             this.ExecuteNonQuery(connection, transaction, @"
@@ -122,6 +123,7 @@ public sealed class DatabaseService : IDisposable
                 );");
 
             transaction.Commit();
+            this.EnsureColumnExists(connection, "greet_presets", "line4", "TEXT NOT NULL DEFAULT ''");
         }
     }
 
@@ -869,7 +871,7 @@ public sealed class DatabaseService : IDisposable
             using var connection = this.OpenConnection();
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT id, name, line1, line2, line3
+                SELECT id, name, line1, line2, line3, line4
                 FROM greet_presets
                 ORDER BY name;";
             using var reader = command.ExecuteReader();
@@ -883,6 +885,7 @@ public sealed class DatabaseService : IDisposable
                     Line1 = reader.GetString(2),
                     Line2 = reader.GetString(3),
                     Line3 = reader.GetString(4),
+                    Line4 = reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
                 });
             }
 
@@ -897,7 +900,7 @@ public sealed class DatabaseService : IDisposable
             using var connection = this.OpenConnection();
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT id, name, line1, line2, line3
+                SELECT id, name, line1, line2, line3, line4
                 FROM greet_presets
                 WHERE id = @id;";
             command.Parameters.AddWithValue("@id", presetId);
@@ -914,27 +917,30 @@ public sealed class DatabaseService : IDisposable
                 Line1 = reader.GetString(2),
                 Line2 = reader.GetString(3),
                 Line3 = reader.GetString(4),
+                Line4 = reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
             };
         }
     }
 
-    public int SavePreset(string name, string line1, string line2, string line3)
+    public int SavePreset(string name, string line1, string line2, string line3, string line4)
     {
         lock (this.syncRoot)
         {
             using var connection = this.OpenConnection();
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                INSERT INTO greet_presets (name, line1, line2, line3)
-                VALUES (@name, @line1, @line2, @line3)
+                INSERT INTO greet_presets (name, line1, line2, line3, line4)
+                VALUES (@name, @line1, @line2, @line3, @line4)
                 ON CONFLICT(name) DO UPDATE SET
                     line1 = excluded.line1,
                     line2 = excluded.line2,
-                    line3 = excluded.line3;";
+                    line3 = excluded.line3,
+                    line4 = excluded.line4;";
             command.Parameters.AddWithValue("@name", name.Trim());
             command.Parameters.AddWithValue("@line1", line1.Trim());
             command.Parameters.AddWithValue("@line2", line2.Trim());
             command.Parameters.AddWithValue("@line3", line3.Trim());
+            command.Parameters.AddWithValue("@line4", line4.Trim());
             _ = command.ExecuteNonQuery();
 
             using var select = connection.CreateCommand();
@@ -1362,6 +1368,24 @@ public sealed class DatabaseService : IDisposable
         _ = update.ExecuteNonQuery();
     }
 
+    private void EnsureColumnExists(SqliteConnection connection, string tableName, string columnName, string columnDefinition)
+    {
+        using var info = connection.CreateCommand();
+        info.CommandText = $"PRAGMA table_info({tableName});";
+        using var reader = info.ExecuteReader();
+        while (reader.Read())
+        {
+            if (string.Equals(reader.GetString(1), columnName, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+        }
+
+        using var alter = connection.CreateCommand();
+        alter.CommandText = $"ALTER TABLE {tableName} ADD COLUMN {columnName} {columnDefinition};";
+        _ = alter.ExecuteNonQuery();
+    }
+
     private SqliteConnection OpenConnection()
     {
         var connection = new SqliteConnection($"Data Source={this.dbPath};Mode=ReadWriteCreate;Cache=Shared");
@@ -1377,3 +1401,5 @@ public sealed class DatabaseService : IDisposable
         _ = command.ExecuteNonQuery();
     }
 }
+
+

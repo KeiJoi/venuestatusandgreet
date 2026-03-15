@@ -75,6 +75,9 @@ public sealed class Plugin : IDalamudPlugin
             this.Configuration.ExportDirectory = Path.Combine(PluginInterface.ConfigDirectory.FullName, "exports");
         }
 
+        // Always come up closed after a reload so a stale open state never resumes automatically.
+        this.Configuration.IsVenueOpen = false;
+
         var dbPath = Path.Combine(PluginInterface.ConfigDirectory.FullName, "VenueStatusAndGreet.db");
         this.Database = new DatabaseService(dbPath, Log);
         this.Database.Initialize();
@@ -175,12 +178,22 @@ public sealed class Plugin : IDalamudPlugin
         }
     }
 
+    internal void SetVenueOpen(bool isOpen, DateTime nowUtc)
+    {
+        this.Greeter.ResetQueue(isOpen ? "Venue opened" : "Venue closed");
+        this.Configuration.IsVenueOpen = isOpen;
+        this.Tracker.SetVenueOpen(isOpen, nowUtc);
+        this.SaveConfiguration();
+    }
+
     internal void ApplyTrackingFilters(DateTime nowUtc)
     {
+        this.Configuration.TrackingPollIntervalSeconds = Math.Clamp(this.Configuration.TrackingPollIntervalSeconds, 5, 3600);
         this.Tracker.SetFilters(
             this.Configuration.LockToOpenTerritory,
             this.Configuration.UseDistanceFilter,
             this.Configuration.VenueRadiusYalms,
+            this.Configuration.TrackingPollIntervalSeconds,
             nowUtc);
         this.SaveConfiguration();
     }
@@ -515,3 +528,4 @@ public sealed class Plugin : IDalamudPlugin
         }
     }
 }
+

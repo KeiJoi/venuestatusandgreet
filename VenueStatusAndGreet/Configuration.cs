@@ -1,4 +1,4 @@
-using Dalamud.Configuration;
+﻿using Dalamud.Configuration;
 
 namespace VenueStatusAndGreet;
 
@@ -27,4 +27,6 @@ public sealed class Configuration : IPluginConfiguration
     public float VenueRadiusYalms { get; set; } = 35f;
 
     public bool AutoDetectVenueAddress { get; set; } = true;
+
+    public int TrackingPollIntervalSeconds { get; set; } = 900;
 }

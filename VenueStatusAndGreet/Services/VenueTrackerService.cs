@@ -19,6 +19,7 @@ public sealed class VenueTrackerService
 
     private DateTime lastScanUtc = DateTime.MinValue;
     private DateTime lastSampleBucketUtc = DateTime.MinValue;
+    private bool suppressNextScanNotifications;
 
     public VenueTrackerService(DatabaseService database, IObjectTable objectTable, IClientState clientState, IPluginLog log)
     {
@@ -42,6 +43,8 @@ public sealed class VenueTrackerService
 
     public float VenueRadiusYalms { get; private set; } = 35f;
 
+    public int TrackingPollIntervalSeconds { get; private set; } = 900;
+
     public uint? LockedTerritoryId { get; private set; }
 
     public bool TrackingTerritoryMatches => this.LockedTerritoryId is null || this.clientState.TerritoryType == this.LockedTerritoryId.Value;
@@ -53,11 +56,12 @@ public sealed class VenueTrackerService
         this.database.SetVenueInfo(this.VenueName, this.VenueAddress, nowUtc);
     }
 
-    public void SetFilters(bool lockToOpenTerritory, bool useDistanceFilter, float venueRadiusYalms, DateTime nowUtc)
+    public void SetFilters(bool lockToOpenTerritory, bool useDistanceFilter, float venueRadiusYalms, int trackingPollIntervalSeconds, DateTime nowUtc)
     {
         this.LockToOpenTerritory = lockToOpenTerritory;
         this.UseDistanceFilter = useDistanceFilter;
         this.VenueRadiusYalms = Math.Clamp(venueRadiusYalms, 5f, 150f);
+        this.TrackingPollIntervalSeconds = Math.Clamp(trackingPollIntervalSeconds, 5, 3600);
 
         if (!this.LockToOpenTerritory)
         {
@@ -90,13 +94,14 @@ public sealed class VenueTrackerService
             this.currentlyPresent.Clear();
             this.identityLookup.Clear();
             this.objectIdLookup.Clear();
+            this.suppressNextScanNotifications = false;
         }
         else
         {
             // Defer scanning to Tick (framework update on main thread).
-            // Plugin constructor can run off-thread and cannot touch ObjectTable.LocalPlayer safely.
             this.lastSampleBucketUtc = DateTime.MinValue;
             this.lastScanUtc = DateTime.MinValue;
+            this.suppressNextScanNotifications = true;
         }
     }
 
@@ -107,7 +112,7 @@ public sealed class VenueTrackerService
             return;
         }
 
-        if ((nowUtc - this.lastScanUtc).TotalMilliseconds < 1000)
+        if ((nowUtc - this.lastScanUtc).TotalSeconds < this.TrackingPollIntervalSeconds)
         {
             return;
         }
@@ -120,7 +125,10 @@ public sealed class VenueTrackerService
             return;
         }
 
-        this.ScanPlayerObjects(nowUtc, suppressFirstVisitNotifications: false);
+        var suppressNotifications = this.suppressNextScanNotifications;
+        this.suppressNextScanNotifications = false;
+
+        this.ScanPlayerObjects(nowUtc, suppressNotifications);
         this.SampleGuestCount(nowUtc);
     }
 

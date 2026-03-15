@@ -46,9 +46,24 @@ public sealed class GreeterService
         this.activePreset = preset;
     }
 
+    public void ResetQueue(string reason)
+    {
+        while (this.queue.TryDequeue(out _))
+        {
+        }
+
+        lock (this.queuedKeys)
+        {
+            this.queuedKeys.Clear();
+        }
+
+        this.currentJob = null;
+        this.log.Information($"Reset greeting queue: {reason}");
+    }
+
     public bool QueueGreeting(GuestIdentity guest)
     {
-        if (this.activePreset is null || this.activePreset.NonEmptyLines.Count == 0)
+        if (this.activePreset is null || !this.activePreset.HasActions)
         {
             this.log.Warning($"QueueGreeting rejected for {guest.DisplayName}: no active preset.");
             return false;
@@ -84,7 +99,7 @@ public sealed class GreeterService
                 return;
             }
 
-            if (this.activePreset is null || this.activePreset.NonEmptyLines.Count == 0)
+            if (this.activePreset is null || !this.activePreset.HasActions)
             {
                 this.DropGuest(nextGuest, "No active preset when greeting started.");
                 return;
@@ -96,7 +111,7 @@ public sealed class GreeterService
                 return;
             }
 
-            this.currentJob = new GreetingJob(nextGuest, this.activePreset.NonEmptyLines.ToArray(), nowUtc);
+            this.currentJob = new GreetingJob(nextGuest, BuildSteps(this.activePreset), nowUtc);
             this.log.Information($"Starting greeting job for {nextGuest.DisplayName}.");
         }
 
@@ -105,7 +120,7 @@ public sealed class GreeterService
             return;
         }
 
-        if (this.currentJob.LineIndex >= this.currentJob.Lines.Length)
+        if (this.currentJob.StepIndex >= this.currentJob.Steps.Length)
         {
             this.OnGreetingFinished(this.currentJob.Guest);
             return;
@@ -113,28 +128,51 @@ public sealed class GreeterService
 
         if (!this.canGreetNow(this.currentJob.Guest))
         {
-            this.DropGuest(this.currentJob.Guest, "Guest left before greeting line could be sent.");
+            this.DropGuest(this.currentJob.Guest, "Guest left before greeting step could be sent.");
             this.currentJob = null;
             return;
         }
 
-        var line = this.currentJob.Lines[this.currentJob.LineIndex];
-        if (!this.SendTell(this.currentJob.Guest, line))
+        var step = this.currentJob.Steps[this.currentJob.StepIndex];
+        var stepSucceeded = step.Kind switch
         {
-            this.DropGuest(this.currentJob.Guest, "Tell command failed to process.");
+            GreetingStepKind.Tell => this.SendTell(this.currentJob.Guest, step.Content),
+            GreetingStepKind.Command => this.ExecuteStepCommand(this.currentJob.Guest, step.Content),
+            _ => false,
+        };
+
+        if (!stepSucceeded)
+        {
+            this.DropGuest(this.currentJob.Guest, "Greeting step failed to process.");
             this.currentJob = null;
             return;
         }
 
-        this.currentJob.LineIndex++;
+        this.currentJob.StepIndex++;
 
-        if (this.currentJob.LineIndex >= this.currentJob.Lines.Length)
+        if (this.currentJob.StepIndex >= this.currentJob.Steps.Length)
         {
             this.OnGreetingFinished(this.currentJob.Guest);
             return;
         }
 
         this.currentJob.NextSendUtc = nowUtc.AddSeconds(2);
+    }
+
+    private static GreetingStep[] BuildSteps(GreetPreset preset)
+    {
+        var steps = new List<GreetingStep>();
+        foreach (var messageLine in preset.MessageLines)
+        {
+            steps.Add(new GreetingStep(GreetingStepKind.Tell, messageLine));
+        }
+
+        if (!string.IsNullOrWhiteSpace(preset.Line4))
+        {
+            steps.Add(new GreetingStep(GreetingStepKind.Command, preset.Line4));
+        }
+
+        return steps.ToArray();
     }
 
     private bool SendTell(GuestIdentity guest, string message)
@@ -167,6 +205,33 @@ public sealed class GreeterService
 
         this.log.Warning($"All tell command variants failed to process for {guest.DisplayName}.");
         return false;
+    }
+
+    private bool ExecuteStepCommand(GuestIdentity guest, string commandText)
+    {
+        var command = ReplaceTargetPlaceholder(commandText.Trim(), guest);
+        if (string.IsNullOrWhiteSpace(command))
+        {
+            this.log.Warning($"Skipping empty greet command for {guest.DisplayName}.");
+            return true;
+        }
+
+        if (!command.StartsWith("/", StringComparison.Ordinal))
+        {
+            command = $"/{command}";
+        }
+
+        try
+        {
+            var processed = this.executeChatCommand(command);
+            this.log.Information($"Sending greet command: {command} (processed={processed})");
+            return processed;
+        }
+        catch (Exception ex)
+        {
+            this.log.Warning(ex, $"Failed to process greet command for {guest.DisplayName}: {command}");
+            return false;
+        }
     }
 
     private IReadOnlyList<string> BuildTellCommandCandidates(GuestIdentity guest, string message)
@@ -312,19 +377,28 @@ public sealed class GreeterService
 
     private sealed class GreetingJob
     {
-        public GreetingJob(GuestIdentity guest, string[] lines, DateTime nowUtc)
+        public GreetingJob(GuestIdentity guest, GreetingStep[] steps, DateTime nowUtc)
         {
             this.Guest = guest;
-            this.Lines = lines;
+            this.Steps = steps;
             this.NextSendUtc = nowUtc;
         }
 
         public GuestIdentity Guest { get; }
 
-        public string[] Lines { get; }
+        public GreetingStep[] Steps { get; }
 
-        public int LineIndex { get; set; }
+        public int StepIndex { get; set; }
 
         public DateTime NextSendUtc { get; set; }
     }
+
+    private readonly record struct GreetingStep(GreetingStepKind Kind, string Content);
+
+    private enum GreetingStepKind
+    {
+        Tell,
+        Command,
+    }
 }
+

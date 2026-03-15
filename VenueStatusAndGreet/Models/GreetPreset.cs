@@ -1,4 +1,4 @@
-namespace VenueStatusAndGreet.Models;
+﻿namespace VenueStatusAndGreet.Models;
 
 public sealed class GreetPreset
 {
@@ -12,7 +12,11 @@ public sealed class GreetPreset
 
     public string Line3 { get; set; } = string.Empty;
 
-    public IReadOnlyList<string> NonEmptyLines => new[] { this.Line1, this.Line2, this.Line3 }
+    public string Line4 { get; set; } = string.Empty;
+
+    public IReadOnlyList<string> MessageLines => new[] { this.Line1, this.Line2, this.Line3 }
         .Where(static x => !string.IsNullOrWhiteSpace(x))
         .ToList();
+
+    public bool HasActions => this.MessageLines.Count > 0 || !string.IsNullOrWhiteSpace(this.Line4);
 }
