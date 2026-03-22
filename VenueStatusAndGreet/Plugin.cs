@@ -86,7 +86,6 @@ public sealed class Plugin : IDalamudPlugin
         this.Tracker = new VenueTrackerService(this.Database, ObjectTable, ClientState, Log);
         this.Tracker.SetVenueInfo(this.Configuration.VenueName, this.Configuration.VenueAddress, DateTime.UtcNow);
         this.ApplyTrackingFilters(DateTime.UtcNow);
-        this.Tracker.SetVenueOpen(this.Configuration.IsVenueOpen, DateTime.UtcNow);
         this.Tracker.FirstVisitTonightDetected += this.OnFirstVisitTonightDetected;
 
         this.Greeter = new GreeterService(Log, this.Tracker.IsCurrentlyPresent, this.ExecuteChatCommand);
@@ -180,10 +179,56 @@ public sealed class Plugin : IDalamudPlugin
 
     internal void SetVenueOpen(bool isOpen, DateTime nowUtc)
     {
-        this.Greeter.ResetQueue(isOpen ? "Venue opened" : "Venue closed");
-        this.Configuration.IsVenueOpen = isOpen;
-        this.Tracker.SetVenueOpen(isOpen, nowUtc);
+        if (isOpen)
+        {
+            this.StartNewOpening(nowUtc);
+            return;
+        }
+
+        this.PauseOpening(nowUtc);
+    }
+
+    internal void StartNewOpening(DateTime nowUtc)
+    {
+        this.Greeter.ResetQueue("Venue opened");
+        this.Configuration.IsVenueOpen = true;
+        this.Tracker.StartVenueSession(nowUtc);
         this.SaveConfiguration();
+    }
+
+    internal void PauseOpening(DateTime nowUtc)
+    {
+        this.Greeter.ResetQueue("Venue paused");
+        this.Configuration.IsVenueOpen = false;
+        this.Tracker.PauseVenueSession(nowUtc);
+        this.SaveConfiguration();
+    }
+
+    internal bool ResumeOpening(long sessionId, DateTime nowUtc)
+    {
+        this.Greeter.ResetQueue("Venue resumed");
+        var resumed = this.Tracker.ResumeVenueSession(sessionId, nowUtc);
+        this.Configuration.IsVenueOpen = resumed;
+        this.SaveConfiguration();
+        return resumed;
+    }
+
+    internal bool CloseOpening(DateTime nowUtc)
+    {
+        this.Greeter.ResetQueue("Venue closed");
+        var closed = this.Tracker.CloseVenueSession(nowUtc);
+        this.Configuration.IsVenueOpen = false;
+        this.SaveConfiguration();
+        return closed;
+    }
+
+    internal bool CloseOpening(long sessionId, DateTime nowUtc)
+    {
+        this.Greeter.ResetQueue("Venue closed");
+        var closed = this.Tracker.CloseVenueSession(sessionId, nowUtc);
+        this.Configuration.IsVenueOpen = false;
+        this.SaveConfiguration();
+        return closed;
     }
 
     internal void ApplyTrackingFilters(DateTime nowUtc)
@@ -528,4 +573,6 @@ public sealed class Plugin : IDalamudPlugin
         }
     }
 }
+
+
 

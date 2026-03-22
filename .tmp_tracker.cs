@@ -1,4 +1,4 @@
-using Dalamud.Game.ClientState.Objects;
+﻿using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin.Services;
@@ -79,52 +79,33 @@ public sealed class VenueTrackerService
         }
     }
 
-    public void StartVenueSession(DateTime nowUtc)
+    public void SetVenueOpen(bool isOpen, DateTime nowUtc)
     {
-        this.database.StartVenueSession(this.VenueName, this.VenueAddress, nowUtc);
-        this.VenueOpen = true;
-        this.LockedTerritoryId = this.LockToOpenTerritory ? this.clientState.TerritoryType : null;
-        this.PrepareForOpen();
-    }
-
-    public bool ResumeVenueSession(long sessionId, DateTime nowUtc)
-    {
-        var resumed = this.database.ResumeVenueSession(sessionId, this.VenueName, this.VenueAddress, nowUtc);
-        if (!resumed)
+        this.VenueOpen = isOpen;
+        if (isOpen && this.LockToOpenTerritory)
         {
-            return false;
+            this.LockedTerritoryId = this.clientState.TerritoryType;
+        }
+        else if (!isOpen)
+        {
+            this.LockedTerritoryId = null;
         }
 
-        this.VenueOpen = true;
-        this.LockedTerritoryId = this.LockToOpenTerritory ? this.clientState.TerritoryType : null;
-        this.PrepareForOpen();
-        return true;
-    }
-
-    public void PauseVenueSession(DateTime nowUtc)
-    {
-        _ = this.database.PauseVenueSession(this.VenueName, this.VenueAddress, nowUtc);
-        this.VenueOpen = false;
-        this.LockedTerritoryId = null;
-        this.ApplyClosedState();
-    }
-
-    public bool CloseVenueSession(DateTime nowUtc)
-    {
-        var closed = this.database.CloseVenueSession(this.VenueName, this.VenueAddress, nowUtc);
-        this.VenueOpen = false;
-        this.LockedTerritoryId = null;
-        this.ApplyClosedState();
-        return closed;
-    }
-
-    public bool CloseVenueSession(long sessionId, DateTime nowUtc)
-    {
-        var closed = this.database.CloseVenueSession(sessionId, this.VenueName, this.VenueAddress, nowUtc);
-        this.VenueOpen = false;
-        this.LockedTerritoryId = null;
-        this.ApplyClosedState();
-        return closed;
+        this.database.SetVenueOpen(isOpen, this.VenueName, this.VenueAddress, nowUtc);
+        if (!isOpen)
+        {
+            this.currentlyPresent.Clear();
+            this.identityLookup.Clear();
+            this.objectIdLookup.Clear();
+            this.suppressNextScanNotifications = false;
+        }
+        else
+        {
+            this.lastPresenceScanUtc = DateTime.MinValue;
+            this.lastStatsPollUtc = DateTime.MinValue;
+            this.lastSampleBucketUtc = DateTime.MinValue;
+            this.suppressNextScanNotifications = true;
+        }
     }
 
     public void Tick(DateTime nowUtc)
@@ -189,23 +170,6 @@ public sealed class VenueTrackerService
     public bool IsCurrentlyPresent(GuestIdentity guest)
     {
         return this.currentlyPresent.Contains(guest.Key);
-    }
-
-    private void PrepareForOpen()
-    {
-        this.lastPresenceScanUtc = DateTime.MinValue;
-        this.lastStatsPollUtc = DateTime.MinValue;
-        this.lastSampleBucketUtc = DateTime.MinValue;
-        this.suppressNextScanNotifications = true;
-    }
-
-    private void ApplyClosedState()
-    {
-        this.currentlyPresent.Clear();
-        this.identityLookup.Clear();
-        this.objectIdLookup.Clear();
-        this.suppressNextScanNotifications = false;
-        this.lastPresenceScanUtc = DateTime.MinValue;
     }
 
     private void ScanPlayerObjects(DateTime nowUtc, bool suppressFirstVisitNotifications)

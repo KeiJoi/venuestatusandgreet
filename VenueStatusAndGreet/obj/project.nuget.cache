@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "R1GYklvrfqg=",
+  "dgSpecHash": "KmOPrQaMuZI=",
   "success": true,
   "projectFilePath": "C:\\FFXIVplugs\\venuestatusandgreet\\VenueStatusAndGreet\\VenueStatusAndGreet.csproj",
   "expectedPackageFiles": [
@@ -22,15 +22,5 @@
     "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\sqlitepclraw.provider.e_sqlite3\\2.1.10\\sqlitepclraw.provider.e_sqlite3.2.1.10.nupkg.sha512",
     "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\system.io.packaging\\8.0.1\\system.io.packaging.8.0.1.nupkg.sha512"
   ],
-  "logs": [
-    {
-      "code": "NU1900",
-      "level": "Warning",
-      "message": "Error occurred while getting package vulnerability data: Unable to load the service index for source https://api.nuget.org/v3/index.json.",
-      "projectPath": "C:\\FFXIVplugs\\venuestatusandgreet\\VenueStatusAndGreet\\VenueStatusAndGreet.csproj",
-      "warningLevel": 1,
-      "filePath": "C:\\FFXIVplugs\\venuestatusandgreet\\VenueStatusAndGreet\\VenueStatusAndGreet.csproj",
-      "targetGraphs": []
-    }
-  ]
+  "logs": []
 }

@@ -152,28 +152,31 @@ public sealed class DatabaseService : IDisposable
         }
     }
 
-    public void SetVenueOpen(bool isOpen, string venueName, string venueAddress, DateTime nowUtc)
+    public long StartVenueSession(string venueName, string venueAddress, DateTime nowUtc)
     {
         lock (this.syncRoot)
         {
             var nightId = this.EnsureNightRowInternal(venueName, venueAddress, nowUtc);
             using var connection = this.OpenConnection();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                UPDATE venue_nights
-                SET is_open = @is_open,
-                    opened_at_utc = CASE WHEN @is_open = 1 AND opened_at_utc IS NULL THEN @opened_now ELSE opened_at_utc END,
-                    closed_at_utc = CASE WHEN @is_open = 0 THEN @closed_now ELSE NULL END
-                WHERE id = @night_id;";
-            command.Parameters.AddWithValue("@is_open", isOpen ? 1 : 0);
-            command.Parameters.AddWithValue("@opened_now", nowUtc.ToString("O", CultureInfo.InvariantCulture));
-            command.Parameters.AddWithValue("@closed_now", nowUtc.ToString("O", CultureInfo.InvariantCulture));
-            command.Parameters.AddWithValue("@night_id", nightId);
-            _ = command.ExecuteNonQuery();
-
-            if (isOpen)
+            using (var command = connection.CreateCommand())
             {
-                using var createSession = connection.CreateCommand();
+                command.CommandText = @"
+                    UPDATE venue_nights
+                    SET is_open = 1,
+                        venue_name = @name,
+                        venue_address = @address,
+                        opened_at_utc = CASE WHEN opened_at_utc IS NULL THEN @opened_now ELSE opened_at_utc END,
+                        closed_at_utc = NULL
+                    WHERE id = @night_id;";
+                command.Parameters.AddWithValue("@name", venueName.Trim());
+                command.Parameters.AddWithValue("@address", venueAddress.Trim());
+                command.Parameters.AddWithValue("@opened_now", nowUtc.ToString("O", CultureInfo.InvariantCulture));
+                command.Parameters.AddWithValue("@night_id", nightId);
+                _ = command.ExecuteNonQuery();
+            }
+
+            using (var createSession = connection.CreateCommand())
+            {
                 createSession.CommandText = @"
                     INSERT INTO venue_sessions (night_id, venue_name, venue_address, opened_at_utc)
                     VALUES (@night_id, @name, @address, @opened_at);";
@@ -182,29 +185,198 @@ public sealed class DatabaseService : IDisposable
                 createSession.Parameters.AddWithValue("@address", venueAddress.Trim());
                 createSession.Parameters.AddWithValue("@opened_at", nowUtc.ToString("O", CultureInfo.InvariantCulture));
                 _ = createSession.ExecuteNonQuery();
-                using var lastId = connection.CreateCommand();
-                lastId.CommandText = "SELECT last_insert_rowid();";
-                this.currentSessionId = Convert.ToInt64(lastId.ExecuteScalar(), CultureInfo.InvariantCulture);
             }
-            else
-            {
-                this.CloseAllPresentInternal(connection, nightId, nowUtc);
-                if (this.currentSessionId is long sessionId)
-                {
-                    this.CloseAllPresentInSessionInternal(connection, sessionId, nowUtc);
-                    using var closeSession = connection.CreateCommand();
-                    closeSession.CommandText = @"
-                        UPDATE venue_sessions
-                        SET closed_at_utc = @closed
-                        WHERE id = @session_id;";
-                    closeSession.Parameters.AddWithValue("@closed", nowUtc.ToString("O", CultureInfo.InvariantCulture));
-                    closeSession.Parameters.AddWithValue("@session_id", sessionId);
-                    _ = closeSession.ExecuteNonQuery();
-                }
 
-                this.currentSessionId = null;
-            }
+            using var lastId = connection.CreateCommand();
+            lastId.CommandText = "SELECT last_insert_rowid();";
+            this.currentSessionId = Convert.ToInt64(lastId.ExecuteScalar(), CultureInfo.InvariantCulture);
+            return this.currentSessionId.Value;
         }
+    }
+
+    public bool ResumeVenueSession(long sessionId, string venueName, string venueAddress, DateTime nowUtc)
+    {
+        lock (this.syncRoot)
+        {
+            using var connection = this.OpenConnection();
+            var sessionNight = this.GetSessionNightInfoInternal(connection, sessionId, requireUnclosed: true);
+            if (sessionNight is null)
+            {
+                return false;
+            }
+
+            using (var updateNight = connection.CreateCommand())
+            {
+                updateNight.CommandText = @"
+                    UPDATE venue_nights
+                    SET is_open = 1,
+                        venue_name = @name,
+                        venue_address = @address,
+                        closed_at_utc = NULL
+                    WHERE id = @night_id;";
+                updateNight.Parameters.AddWithValue("@name", venueName.Trim());
+                updateNight.Parameters.AddWithValue("@address", venueAddress.Trim());
+                updateNight.Parameters.AddWithValue("@night_id", sessionNight.Value.NightId);
+                _ = updateNight.ExecuteNonQuery();
+            }
+
+            using (var updateSession = connection.CreateCommand())
+            {
+                updateSession.CommandText = @"
+                    UPDATE venue_sessions
+                    SET venue_name = @name,
+                        venue_address = @address,
+                        closed_at_utc = NULL
+                    WHERE id = @session_id;";
+                updateSession.Parameters.AddWithValue("@name", venueName.Trim());
+                updateSession.Parameters.AddWithValue("@address", venueAddress.Trim());
+                updateSession.Parameters.AddWithValue("@session_id", sessionId);
+                _ = updateSession.ExecuteNonQuery();
+            }
+
+            this.currentSessionId = sessionId;
+            this.currentNightId = sessionNight.Value.NightId;
+            this.currentNightDate = sessionNight.Value.NightDate;
+            return true;
+        }
+    }
+
+    public bool PauseVenueSession(string venueName, string venueAddress, DateTime nowUtc)
+    {
+        lock (this.syncRoot)
+        {
+            if (this.currentSessionId is not long sessionId)
+            {
+                return false;
+            }
+
+            using var connection = this.OpenConnection();
+            var sessionNight = this.GetSessionNightInfoInternal(connection, sessionId, requireUnclosed: true);
+            if (sessionNight is null)
+            {
+                return false;
+            }
+
+            this.CloseAllPresentInternal(connection, sessionNight.Value.NightId, nowUtc);
+            this.CloseAllPresentInSessionInternal(connection, sessionId, nowUtc);
+
+            using var updateNight = connection.CreateCommand();
+            updateNight.CommandText = @"
+                UPDATE venue_nights
+                SET is_open = 0,
+                    venue_name = @name,
+                    venue_address = @address,
+                    closed_at_utc = NULL
+                WHERE id = @night_id;";
+            updateNight.Parameters.AddWithValue("@name", venueName.Trim());
+            updateNight.Parameters.AddWithValue("@address", venueAddress.Trim());
+            updateNight.Parameters.AddWithValue("@night_id", sessionNight.Value.NightId);
+            _ = updateNight.ExecuteNonQuery();
+
+            this.currentNightId = sessionNight.Value.NightId;
+            this.currentNightDate = sessionNight.Value.NightDate;
+            return true;
+        }
+    }
+
+    public bool CloseVenueSession(string venueName, string venueAddress, DateTime nowUtc)
+    {
+        lock (this.syncRoot)
+        {
+            if (this.currentSessionId is not long sessionId)
+            {
+                return false;
+            }
+
+            return this.CloseVenueSessionInternal(sessionId, venueName, venueAddress, nowUtc, clearCurrentSession: true);
+        }
+    }
+
+    public bool CloseVenueSession(long sessionId, string venueName, string venueAddress, DateTime nowUtc)
+    {
+        lock (this.syncRoot)
+        {
+            return this.CloseVenueSessionInternal(sessionId, venueName, venueAddress, nowUtc, clearCurrentSession: this.currentSessionId == sessionId);
+        }
+    }
+
+    private bool CloseVenueSessionInternal(long sessionId, string venueName, string venueAddress, DateTime nowUtc, bool clearCurrentSession)
+    {
+        using var connection = this.OpenConnection();
+        var sessionNight = this.GetSessionNightInfoInternal(connection, sessionId, requireUnclosed: false);
+        if (sessionNight is null)
+        {
+            return false;
+        }
+
+        this.CloseAllPresentInternal(connection, sessionNight.Value.NightId, nowUtc);
+        this.CloseAllPresentInSessionInternal(connection, sessionId, nowUtc);
+
+        using (var updateNight = connection.CreateCommand())
+        {
+            updateNight.CommandText = @"
+                UPDATE venue_nights
+                SET is_open = 0,
+                    venue_name = @name,
+                    venue_address = @address,
+                    closed_at_utc = @closed
+                WHERE id = @night_id;";
+            updateNight.Parameters.AddWithValue("@name", venueName.Trim());
+            updateNight.Parameters.AddWithValue("@address", venueAddress.Trim());
+            updateNight.Parameters.AddWithValue("@closed", nowUtc.ToString("O", CultureInfo.InvariantCulture));
+            updateNight.Parameters.AddWithValue("@night_id", sessionNight.Value.NightId);
+            _ = updateNight.ExecuteNonQuery();
+        }
+
+        using (var closeSession = connection.CreateCommand())
+        {
+            closeSession.CommandText = @"
+                UPDATE venue_sessions
+                SET venue_name = @name,
+                    venue_address = @address,
+                    closed_at_utc = @closed
+                WHERE id = @session_id;";
+            closeSession.Parameters.AddWithValue("@name", venueName.Trim());
+            closeSession.Parameters.AddWithValue("@address", venueAddress.Trim());
+            closeSession.Parameters.AddWithValue("@closed", nowUtc.ToString("O", CultureInfo.InvariantCulture));
+            closeSession.Parameters.AddWithValue("@session_id", sessionId);
+            _ = closeSession.ExecuteNonQuery();
+        }
+
+        if (clearCurrentSession)
+        {
+            this.currentSessionId = null;
+        }
+
+        this.currentNightId = sessionNight.Value.NightId;
+        this.currentNightDate = sessionNight.Value.NightDate;
+        return true;
+    }
+
+    private (long NightId, DateOnly NightDate)? GetSessionNightInfoInternal(SqliteConnection connection, long sessionId, bool requireUnclosed)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = $@"
+            SELECT s.night_id, n.night_date_local
+            FROM venue_sessions s
+            INNER JOIN venue_nights n ON n.id = s.night_id
+            WHERE s.id = @session_id {(requireUnclosed ? "AND s.closed_at_utc IS NULL" : string.Empty)};";
+        command.Parameters.AddWithValue("@session_id", sessionId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+        {
+            return null;
+        }
+
+        var nightId = reader.GetInt64(0);
+        var nightDate = DateOnly.FromDateTime(DateTime.Now);
+        if (!reader.IsDBNull(1) &&
+            DateOnly.TryParseExact(reader.GetString(1), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate))
+        {
+            nightDate = parsedDate;
+        }
+
+        return (nightId, nightDate);
     }
 
     public VisitorPresenceChange MarkVisitorPresent(GuestIdentity guest, DateTime nowUtc, ulong objectId, string venueName, string venueAddress)
@@ -1401,5 +1573,6 @@ public sealed class DatabaseService : IDisposable
         _ = command.ExecuteNonQuery();
     }
 }
+
 
 

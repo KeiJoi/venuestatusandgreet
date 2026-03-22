@@ -12,8 +12,10 @@ public sealed class VenueSessionEntry
 
     public string VenueName { get; set; } = string.Empty;
 
+    public bool IsResumable => this.ClosedAtLocal is null;
+
     public string Label =>
         this.ClosedAtLocal is DateTime closed
             ? $"{this.NightDate:yyyy-MM-dd} {this.OpenedAtLocal:HH:mm} - {closed:HH:mm}"
-            : $"{this.NightDate:yyyy-MM-dd} {this.OpenedAtLocal:HH:mm} - (open)";
+            : $"{this.NightDate:yyyy-MM-dd} {this.OpenedAtLocal:HH:mm} - (resumable)";
 }

@@ -138,19 +138,116 @@ public sealed class MainWindow : Window, IDisposable
             this.plugin.SaveConfiguration();
         }
 
+        var activeSessionId = this.ResolveSelectedSessionId();
+        var selectedSession = this.cachedSessions.FirstOrDefault(x => x.SessionId == activeSessionId);
+        var selectedSessionIsResumable = selectedSession?.IsResumable == true;
+
         var isVenueOpen = this.plugin.Configuration.IsVenueOpen;
         if (ImGui.Checkbox("Venue Open", ref isVenueOpen))
         {
-            this.plugin.SetVenueOpen(isVenueOpen, DateTime.UtcNow);
+            if (isVenueOpen)
+            {
+                if (selectedSessionIsResumable && activeSessionId is long resumeId)
+                {
+                    _ = this.plugin.ResumeOpening(resumeId, DateTime.UtcNow);
+                }
+                else
+                {
+                    this.plugin.StartNewOpening(DateTime.UtcNow);
+                }
+            }
+            else
+            {
+                this.plugin.PauseOpening(DateTime.UtcNow);
+            }
+
+            this.RefreshSessionCache();
+            activeSessionId = this.ResolveSelectedSessionId();
+            selectedSession = this.cachedSessions.FirstOrDefault(x => x.SessionId == activeSessionId);
+            selectedSessionIsResumable = selectedSession?.IsResumable == true;
         }
 
         ImGui.SameLine();
         var statusColor = isVenueOpen
             ? new Vector4(0.3f, 0.9f, 0.3f, 1f)
-            : new Vector4(0.95f, 0.25f, 0.25f, 1f);
-        ImGui.TextColored(statusColor, isVenueOpen ? "OPEN" : "CLOSED");
+            : selectedSessionIsResumable
+                ? new Vector4(1f, 0.8f, 0.25f, 1f)
+                : new Vector4(0.95f, 0.25f, 0.25f, 1f);
+        var statusText = isVenueOpen ? "OPEN" : selectedSessionIsResumable ? "PAUSED / RESUMABLE" : "CLOSED";
+        ImGui.TextColored(statusColor, statusText);
 
-        var activeSessionId = this.ResolveSelectedSessionId();
+        if (!isVenueOpen)
+        {
+            if (ImGui.Button("Start New Opening"))
+            {
+                this.plugin.StartNewOpening(DateTime.UtcNow);
+                this.RefreshSessionCache();
+                activeSessionId = this.ResolveSelectedSessionId();
+                selectedSession = this.cachedSessions.FirstOrDefault(x => x.SessionId == activeSessionId);
+                selectedSessionIsResumable = selectedSession?.IsResumable == true;
+            }
+
+            ImGui.SameLine();
+            if (!selectedSessionIsResumable)
+            {
+                ImGui.BeginDisabled();
+            }
+
+            if (ImGui.Button("Resume Selected") && activeSessionId is long resumeSelectedId)
+            {
+                _ = this.plugin.ResumeOpening(resumeSelectedId, DateTime.UtcNow);
+                this.RefreshSessionCache();
+                activeSessionId = this.ResolveSelectedSessionId();
+                selectedSession = this.cachedSessions.FirstOrDefault(x => x.SessionId == activeSessionId);
+                selectedSessionIsResumable = selectedSession?.IsResumable == true;
+            }
+
+            if (!selectedSessionIsResumable)
+            {
+                ImGui.EndDisabled();
+            }
+        }
+        else
+        {
+            if (ImGui.Button("Pause Opening"))
+            {
+                this.plugin.PauseOpening(DateTime.UtcNow);
+                this.RefreshSessionCache();
+                activeSessionId = this.ResolveSelectedSessionId();
+                selectedSession = this.cachedSessions.FirstOrDefault(x => x.SessionId == activeSessionId);
+                selectedSessionIsResumable = selectedSession?.IsResumable == true;
+            }
+        }
+
+        ImGui.SameLine();
+        var canCloseOpening = isVenueOpen || selectedSessionIsResumable;
+        if (!canCloseOpening)
+        {
+            ImGui.BeginDisabled();
+        }
+
+        if (ImGui.Button("Close Opening"))
+        {
+            if (isVenueOpen)
+            {
+                _ = this.plugin.CloseOpening(DateTime.UtcNow);
+            }
+            else if (activeSessionId is long closeSessionId)
+            {
+                _ = this.plugin.CloseOpening(closeSessionId, DateTime.UtcNow);
+            }
+
+            this.RefreshSessionCache();
+            activeSessionId = this.ResolveSelectedSessionId();
+            selectedSession = this.cachedSessions.FirstOrDefault(x => x.SessionId == activeSessionId);
+            selectedSessionIsResumable = selectedSession?.IsResumable == true;
+        }
+
+        if (!canCloseOpening)
+        {
+            ImGui.EndDisabled();
+        }
+
         var selectedSessionLabel = this.cachedSessions.FirstOrDefault(x => x.SessionId == activeSessionId)?.Label ?? "(No openings yet)";
         if (ImGui.BeginCombo("Openings", selectedSessionLabel))
         {
@@ -201,13 +298,13 @@ public sealed class MainWindow : Window, IDisposable
         }
 
         var pollSeconds = this.plugin.Configuration.TrackingPollIntervalSeconds;
-        if (ImGui.InputInt("Tracking Poll Interval (seconds)", ref pollSeconds))
+        if (ImGui.InputInt("Stats Poll Interval (seconds)", ref pollSeconds))
         {
             this.plugin.Configuration.TrackingPollIntervalSeconds = Math.Clamp(pollSeconds, 5, 3600);
             this.plugin.ApplyTrackingFilters(DateTime.UtcNow);
         }
 
-        ImGui.TextDisabled($"Default is 900 seconds (15 minutes). Current: {this.plugin.Configuration.TrackingPollIntervalSeconds / 60.0:F1} minutes.");
+        ImGui.TextDisabled($"Greeting detection runs every second. This timer only controls statistics sampling. Current: {this.plugin.Configuration.TrackingPollIntervalSeconds / 60.0:F1} minutes.");
 
         var territoryMatch = this.plugin.Tracker.TrackingTerritoryMatches;
         ImGui.TextUnformatted($"Locked Territory: {this.plugin.Tracker.LockedTerritoryId?.ToString() ?? "None"}");
@@ -744,5 +841,7 @@ public sealed class MainWindow : Window, IDisposable
         return $"{duration.Minutes}m {duration.Seconds:D2}s";
     }
 }
+
+
 
 

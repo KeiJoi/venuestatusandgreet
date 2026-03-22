@@ -6,6 +6,9 @@ namespace VenueStatusAndGreet.Services;
 
 public sealed class GreeterService
 {
+    private const double InterStepDelaySeconds = 2;
+    private const double InterGuestDelaySeconds = 2;
+
     private readonly IPluginLog log;
     private readonly Func<GuestIdentity, bool> canGreetNow;
     private readonly Func<string, bool> executeChatCommand;
@@ -15,6 +18,7 @@ public sealed class GreeterService
 
     private GreetPreset? activePreset;
     private GreetingJob? currentJob;
+    private DateTime nextJobStartUtc = DateTime.MinValue;
 
     public GreeterService(IPluginLog log, Func<GuestIdentity, bool> canGreetNow, Func<string, bool> executeChatCommand)
     {
@@ -58,6 +62,7 @@ public sealed class GreeterService
         }
 
         this.currentJob = null;
+        this.nextJobStartUtc = DateTime.MinValue;
         this.log.Information($"Reset greeting queue: {reason}");
     }
 
@@ -94,6 +99,11 @@ public sealed class GreeterService
     {
         if (this.currentJob is null)
         {
+            if (nowUtc < this.nextJobStartUtc)
+            {
+                return;
+            }
+
             if (!this.queue.TryDequeue(out var nextGuest))
             {
                 return;
@@ -101,18 +111,19 @@ public sealed class GreeterService
 
             if (this.activePreset is null || !this.activePreset.HasActions)
             {
-                this.DropGuest(nextGuest, "No active preset when greeting started.");
+                this.DropGuest(nextGuest, "No active preset when greeting started.", nowUtc);
                 return;
             }
 
             if (!this.canGreetNow(nextGuest))
             {
-                this.DropGuest(nextGuest, "Guest not present when greeting started.");
+                this.DropGuest(nextGuest, "Guest not present when greeting started.", nowUtc);
                 return;
             }
 
-            this.currentJob = new GreetingJob(nextGuest, BuildSteps(this.activePreset), nowUtc);
-            this.log.Information($"Starting greeting job for {nextGuest.DisplayName}.");
+            var steps = BuildSteps(this.activePreset);
+            this.currentJob = new GreetingJob(nextGuest, steps, nowUtc);
+            this.log.Information($"Starting greeting job for {nextGuest.DisplayName} with {steps.Length} step(s).");
         }
 
         if (nowUtc < this.currentJob.NextSendUtc)
@@ -122,14 +133,13 @@ public sealed class GreeterService
 
         if (this.currentJob.StepIndex >= this.currentJob.Steps.Length)
         {
-            this.OnGreetingFinished(this.currentJob.Guest);
+            this.OnGreetingFinished(this.currentJob.Guest, nowUtc);
             return;
         }
 
         if (!this.canGreetNow(this.currentJob.Guest))
         {
-            this.DropGuest(this.currentJob.Guest, "Guest left before greeting step could be sent.");
-            this.currentJob = null;
+            this.DropGuest(this.currentJob.Guest, "Guest left before greeting step could be sent.", nowUtc);
             return;
         }
 
@@ -143,8 +153,7 @@ public sealed class GreeterService
 
         if (!stepSucceeded)
         {
-            this.DropGuest(this.currentJob.Guest, "Greeting step failed to process.");
-            this.currentJob = null;
+            this.DropGuest(this.currentJob.Guest, "Greeting step failed to process.", nowUtc);
             return;
         }
 
@@ -152,11 +161,11 @@ public sealed class GreeterService
 
         if (this.currentJob.StepIndex >= this.currentJob.Steps.Length)
         {
-            this.OnGreetingFinished(this.currentJob.Guest);
+            this.OnGreetingFinished(this.currentJob.Guest, nowUtc);
             return;
         }
 
-        this.currentJob.NextSendUtc = nowUtc.AddSeconds(2);
+        this.currentJob.NextSendUtc = nowUtc.AddSeconds(InterStepDelaySeconds);
     }
 
     private static GreetingStep[] BuildSteps(GreetPreset preset)
@@ -353,7 +362,7 @@ public sealed class GreeterService
         }
     }
 
-    private void OnGreetingFinished(GuestIdentity guest)
+    private void OnGreetingFinished(GuestIdentity guest, DateTime nowUtc)
     {
         lock (this.queuedKeys)
         {
@@ -363,9 +372,10 @@ public sealed class GreeterService
         this.log.Information($"Completed greeting job for {guest.DisplayName}.");
         this.GreetingCompleted?.Invoke(guest);
         this.currentJob = null;
+        this.nextJobStartUtc = nowUtc.AddSeconds(InterGuestDelaySeconds);
     }
 
-    private void DropGuest(GuestIdentity guest, string reason)
+    private void DropGuest(GuestIdentity guest, string reason, DateTime nowUtc)
     {
         lock (this.queuedKeys)
         {
@@ -373,6 +383,8 @@ public sealed class GreeterService
         }
 
         this.log.Debug($"Dropping greeting entry for {guest.DisplayName}: {reason}");
+        this.currentJob = null;
+        this.nextJobStartUtc = nowUtc.AddSeconds(InterGuestDelaySeconds);
     }
 
     private sealed class GreetingJob
@@ -382,6 +394,7 @@ public sealed class GreeterService
             this.Guest = guest;
             this.Steps = steps;
             this.NextSendUtc = nowUtc;
+            this.StepIndex = 0;
         }
 
         public GuestIdentity Guest { get; }
@@ -401,4 +414,3 @@ public sealed class GreeterService
         Command,
     }
 }
-
