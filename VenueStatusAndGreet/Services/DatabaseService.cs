@@ -1214,24 +1214,45 @@ public sealed class DatabaseService : IDisposable
 
     private long EnsureNightRowInternal(string venueName, string venueAddress, DateTime nowUtc)
     {
+        using var connection = this.OpenConnection();
+
+        if (this.currentSessionId is long activeSessionId)
+        {
+            var sessionNight = this.GetSessionNightInfoInternal(connection, activeSessionId, requireUnclosed: false);
+            if (sessionNight is not null)
+            {
+                using var updateActiveNight = connection.CreateCommand();
+                updateActiveNight.CommandText = @"
+                    UPDATE venue_nights
+                    SET venue_name = @name, venue_address = @address
+                    WHERE id = @id;";
+                updateActiveNight.Parameters.AddWithValue("@name", venueName.Trim());
+                updateActiveNight.Parameters.AddWithValue("@address", venueAddress.Trim());
+                updateActiveNight.Parameters.AddWithValue("@id", sessionNight.Value.NightId);
+                _ = updateActiveNight.ExecuteNonQuery();
+
+                this.currentNightId = sessionNight.Value.NightId;
+                this.currentNightDate = sessionNight.Value.NightDate;
+                return sessionNight.Value.NightId;
+            }
+        }
+
         var localDate = DateOnly.FromDateTime(nowUtc.ToLocalTime());
         if (this.currentNightId is long cachedId && this.currentNightDate == localDate)
         {
-            using var connection = this.OpenConnection();
-            using var update = connection.CreateCommand();
-            update.CommandText = @"
+            using var updateCachedNight = connection.CreateCommand();
+            updateCachedNight.CommandText = @"
                 UPDATE venue_nights
                 SET venue_name = @name, venue_address = @address
                 WHERE id = @id;";
-            update.Parameters.AddWithValue("@name", venueName.Trim());
-            update.Parameters.AddWithValue("@address", venueAddress.Trim());
-            update.Parameters.AddWithValue("@id", cachedId);
-            _ = update.ExecuteNonQuery();
+            updateCachedNight.Parameters.AddWithValue("@name", venueName.Trim());
+            updateCachedNight.Parameters.AddWithValue("@address", venueAddress.Trim());
+            updateCachedNight.Parameters.AddWithValue("@id", cachedId);
+            _ = updateCachedNight.ExecuteNonQuery();
             return cachedId;
         }
 
-        using var insertConnection = this.OpenConnection();
-        using (var insertOrIgnore = insertConnection.CreateCommand())
+        using (var insertOrIgnore = connection.CreateCommand())
         {
             insertOrIgnore.CommandText = @"
                 INSERT OR IGNORE INTO venue_nights
@@ -1244,7 +1265,7 @@ public sealed class DatabaseService : IDisposable
             _ = insertOrIgnore.ExecuteNonQuery();
         }
 
-        using var select = insertConnection.CreateCommand();
+        using var select = connection.CreateCommand();
         select.CommandText = @"
             SELECT id
             FROM venue_nights
@@ -1263,13 +1284,25 @@ public sealed class DatabaseService : IDisposable
 
     private long? GetCurrentNightIdInternal()
     {
+        using var connection = this.OpenConnection();
+
+        if (this.currentSessionId is long activeSessionId)
+        {
+            var sessionNight = this.GetSessionNightInfoInternal(connection, activeSessionId, requireUnclosed: false);
+            if (sessionNight is not null)
+            {
+                this.currentNightId = sessionNight.Value.NightId;
+                this.currentNightDate = sessionNight.Value.NightDate;
+                return sessionNight.Value.NightId;
+            }
+        }
+
         var localDate = DateOnly.FromDateTime(DateTime.Now);
         if (this.currentNightId is long id && this.currentNightDate == localDate)
         {
             return id;
         }
 
-        using var connection = this.OpenConnection();
         using var select = connection.CreateCommand();
         select.CommandText = @"
             SELECT id
@@ -1573,6 +1606,7 @@ public sealed class DatabaseService : IDisposable
         _ = command.ExecuteNonQuery();
     }
 }
+
 
 
 

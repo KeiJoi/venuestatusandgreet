@@ -5,7 +5,7 @@
     "Punchline": "Venue analytics and smart greetings in one window.",
     "Description": "Tracks venue guests, greeting history, and nightly statistics with export support.",
     "InternalName": "VenueStatusAndGreet",
-    "AssemblyVersion": "1.0.0.2",
+    "AssemblyVersion": "1.0.0.3",
     "ApplicableVersion": "any",
     "DalamudApiLevel": 14,
     "IsTestingExclusive": false,
@@ -21,7 +21,7 @@
       "Social",
       "Utility"
     ],
-    "LastUpdate": 1774142544,
+    "LastUpdate": 1774161580,
     "DownloadLinkInstall": "https://raw.githubusercontent.com/KeiJoi/venuestatusandgreet/refs/heads/main/latest/VenueStatusAndGreet.zip",
     "DownloadLinkUpdate": "https://raw.githubusercontent.com/KeiJoi/venuestatusandgreet/refs/heads/main/latest/VenueStatusAndGreet.zip",
     "DownloadLinkTesting": "https://raw.githubusercontent.com/KeiJoi/venuestatusandgreet/refs/heads/main/latest/VenueStatusAndGreet.zip",
