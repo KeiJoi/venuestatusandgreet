@@ -35,7 +35,7 @@
           }
         }
       },
-      "DalamudPackager/14.0.2": {
+      "DalamudPackager/15.0.0": {
         "type": "package",
         "build": {
           "build/DalamudPackager.props": {},
@@ -355,17 +355,17 @@
         "lib/netstandard2.1/ClosedXML.Parser.xml"
       ]
     },
-    "DalamudPackager/14.0.2": {
-      "sha512": "dQJeq+8eyHzra4Cg5eZ/3LAeS3/UpvvLriYJGSncMK9LqJ7Q4B6jwcOsxo3PfxVd15xj+IzVFxkPqIBmPQu8/w==",
+    "DalamudPackager/15.0.0": {
+      "sha512": "411vwC8/X8Z/sQ2TI6v3SvOn66xFPeOjFn3Zn+h0d3Ox2t1kFm66AhDvmx/qcMwVrR+Hidxj0dadpQ2dgyXMBQ==",
       "type": "package",
-      "path": "dalamudpackager/14.0.2",
+      "path": "dalamudpackager/15.0.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "build/DalamudPackager.props",
         "build/DalamudPackager.targets",
         "buildMultiTargeting/DalamudPackager.props",
-        "dalamudpackager.14.0.2.nupkg.sha512",
+        "dalamudpackager.15.0.0.nupkg.sha512",
         "dalamudpackager.nuspec",
         "tasks/net48/DalamudPackager.dll",
         "tasks/net48/Newtonsoft.Json.dll",
@@ -666,7 +666,7 @@
   "projectFileDependencyGroups": {
     "net10.0-windows7.0": [
       "ClosedXML >= 0.104.2",
-      "DalamudPackager >= 14.0.2",
+      "DalamudPackager >= 15.0.0",
       "DotNet.ReproducibleBuilds >= 1.2.39",
       "ECommons >= 3.0.1.6",
       "Microsoft.Data.Sqlite >= 9.0.3"
@@ -677,7 +677,7 @@
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
-    "version": "1.0.0.3",
+    "version": "1.0.0.4",
     "restore": {
       "projectUniqueName": "C:\\FFXIVplugs\\venuestatusandgreet\\VenueStatusAndGreet\\VenueStatusAndGreet.csproj",
       "projectName": "VenueStatusAndGreet",
@@ -732,7 +732,7 @@
           },
           "DalamudPackager": {
             "target": "Package",
-            "version": "[14.0.2, )"
+            "version": "[15.0.0, )"
           },
           "DotNet.ReproducibleBuilds": {
             "suppressParent": "All",

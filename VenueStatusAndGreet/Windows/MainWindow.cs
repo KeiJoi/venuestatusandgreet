@@ -481,8 +481,14 @@ public sealed class MainWindow : Window, IDisposable
                 : visitor.IsPresent
                     ? new Vector4(1.0f, 0.3f, 0.3f, 1.0f)
                     : new Vector4(1f, 1f, 1f, 1f);
+            var displayName = visitor.IsPresent ? visitor.CharacterName : $"({visitor.CharacterName})";
             ImGui.PushStyleColor(ImGuiCol.Text, color);
-            ImGui.TextUnformatted(visitor.CharacterName);
+            var namePosition = ImGui.GetCursorScreenPos();
+            ImGui.TextUnformatted(displayName);
+            if (visitor.IsPresent)
+            {
+                ImGui.GetWindowDrawList().AddText(namePosition + new Vector2(0.8f, 0f), ImGui.GetColorU32(color), displayName);
+            }
             ImGui.PopStyleColor();
 
             if (ImGui.BeginPopupContextItem($"##visitor_ctx_{visitor.Identity.Key}"))
@@ -841,6 +847,7 @@ public sealed class MainWindow : Window, IDisposable
         return $"{duration.Minutes}m {duration.Seconds:D2}s";
     }
 }
+
 
 
 

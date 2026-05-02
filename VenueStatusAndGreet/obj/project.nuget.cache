@@ -1,12 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "1cgnq+VL2bU=",
+  "dgSpecHash": "rzGA5tTyafI=",
   "success": true,
   "projectFilePath": "C:\\FFXIVplugs\\venuestatusandgreet\\VenueStatusAndGreet\\VenueStatusAndGreet.csproj",
   "expectedPackageFiles": [
     "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\closedxml\\0.104.2\\closedxml.0.104.2.nupkg.sha512",
     "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\closedxml.parser\\1.2.0\\closedxml.parser.1.2.0.nupkg.sha512",
-    "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\dalamudpackager\\14.0.2\\dalamudpackager.14.0.2.nupkg.sha512",
+    "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\dalamudpackager\\15.0.0\\dalamudpackager.15.0.0.nupkg.sha512",
     "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\documentformat.openxml\\3.1.1\\documentformat.openxml.3.1.1.nupkg.sha512",
     "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\documentformat.openxml.framework\\3.1.1\\documentformat.openxml.framework.3.1.1.nupkg.sha512",
     "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\dotnet.reproduciblebuilds\\1.2.39\\dotnet.reproduciblebuilds.1.2.39.nupkg.sha512",

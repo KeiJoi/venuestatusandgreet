@@ -6,7 +6,7 @@
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v10.0": {
-      "VenueStatusAndGreet/1.0.0.3": {
+      "VenueStatusAndGreet/1.0.0.4": {
         "dependencies": {
           "ClosedXML": "0.104.2",
           "ECommons": "3.0.1.6",
@@ -262,7 +262,7 @@
     }
   },
   "libraries": {
-    "VenueStatusAndGreet/1.0.0.3": {
+    "VenueStatusAndGreet/1.0.0.4": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

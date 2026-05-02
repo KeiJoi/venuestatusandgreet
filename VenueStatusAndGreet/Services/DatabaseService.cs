@@ -909,16 +909,30 @@ public sealed class DatabaseService : IDisposable
             command.CommandText = @"
                 SELECT
                     n.night_date_local,
-                    COALESCE(MAX(s.guest_count), 0),
-                    COALESCE(MIN(s.guest_count), 0),
-                    COUNT(v.character_name),
-                    COALESCE(SUM(v.visits), 0),
-                    COALESCE(SUM(v.total_seconds), 0)
+                    COALESCE(gs.max_guest_count, 0),
+                    COALESCE(gs.min_guest_count, 0),
+                    COALESCE(vs.unique_guests, 0),
+                    COALESCE(vs.total_visits, 0),
+                    COALESCE(vs.total_seconds, 0)
                 FROM venue_nights n
-                LEFT JOIN guest_samples s ON s.night_id = n.id
-                LEFT JOIN visitor_night_stats v ON v.night_id = n.id
+                LEFT JOIN (
+                    SELECT
+                        night_id,
+                        MAX(guest_count) AS max_guest_count,
+                        MIN(guest_count) AS min_guest_count
+                    FROM guest_samples
+                    GROUP BY night_id
+                ) gs ON gs.night_id = n.id
+                LEFT JOIN (
+                    SELECT
+                        night_id,
+                        COUNT(DISTINCT character_name || '|' || home_world) AS unique_guests,
+                        COALESCE(SUM(visits), 0) AS total_visits,
+                        COALESCE(SUM(total_seconds), 0) AS total_seconds
+                    FROM visitor_night_stats
+                    GROUP BY night_id
+                ) vs ON vs.night_id = n.id
                 WHERE n.night_date_local BETWEEN @from_date AND @to_date
-                GROUP BY n.id, n.night_date_local
                 ORDER BY n.night_date_local;";
             command.Parameters.AddWithValue("@from_date", fromInclusive.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
             command.Parameters.AddWithValue("@to_date", toInclusive.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
@@ -1606,6 +1620,7 @@ public sealed class DatabaseService : IDisposable
         _ = command.ExecuteNonQuery();
     }
 }
+
 
 
 

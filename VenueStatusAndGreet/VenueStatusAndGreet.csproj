@@ -1,17 +1,17 @@
-<Project Sdk="Dalamud.NET.Sdk/14.0.2">
+<Project Sdk="Dalamud.NET.Sdk/15.0.0">
   <PropertyGroup>
     <AssemblyName>VenueStatusAndGreet</AssemblyName>
     <RootNamespace>VenueStatusAndGreet</RootNamespace>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Version>1.0.0.3</Version>
-    <AssemblyVersion>1.0.0.3</AssemblyVersion>
-    <FileVersion>1.0.0.3</FileVersion>
+    <Version>1.0.0.4</Version>
+    <AssemblyVersion>1.0.0.4</AssemblyVersion>
+    <FileVersion>1.0.0.4</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup>
-    <DalamudApiLevel>14</DalamudApiLevel>
+    <DalamudApiLevel>15</DalamudApiLevel>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
@@ -21,5 +21,6 @@
     <PackageReference Include="ClosedXML" Version="0.104.2" />
   </ItemGroup>
 </Project>
+
 
 

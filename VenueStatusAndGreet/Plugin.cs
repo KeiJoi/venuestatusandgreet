@@ -325,7 +325,7 @@ public sealed class Plugin : IDalamudPlugin
         this.Greeter.Tick(nowUtc);
     }
 
-    private void OnTerritoryChanged(ushort territoryId)
+    private void OnTerritoryChanged(uint territoryId)
     {
         this.TryAutoDetectVenueAddress(force: true);
     }
@@ -573,6 +573,7 @@ public sealed class Plugin : IDalamudPlugin
         }
     }
 }
+
 
 
 
