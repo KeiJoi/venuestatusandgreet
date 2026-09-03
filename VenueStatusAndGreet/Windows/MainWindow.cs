@@ -566,6 +566,15 @@ public sealed class MainWindow : Window, IDisposable
             this.plugin.SaveConfiguration();
         }
 
+        var greetDelaySeconds = this.plugin.Configuration.GreetDelaySeconds;
+        if (ImGui.SliderInt("Greet Delay (seconds)", ref greetDelaySeconds, 0, 20))
+        {
+            this.plugin.Configuration.GreetDelaySeconds = greetDelaySeconds;
+            this.plugin.SaveConfiguration();
+        }
+
+        ImGui.TextDisabled("Delay before the first greet line. Changes apply to queued greetings immediately.");
+
         ImGui.SameLine();
         ImGui.TextUnformatted($"Active Preset: {this.plugin.Greeter.ActivePresetName}");
         ImGui.TextUnformatted($"Pending Greeting Queue: {this.plugin.Greeter.PendingGreetingCount}");

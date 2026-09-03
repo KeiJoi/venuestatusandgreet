@@ -14,6 +14,8 @@ public sealed class Configuration : IPluginConfiguration
 
     public bool AutoGreetEnabled { get; set; } = true;
 
+    public int GreetDelaySeconds { get; set; }
+
     public int StatsRangeDays { get; set; } = 7;
 
     public int? ActivePresetId { get; set; }

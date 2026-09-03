@@ -677,7 +677,7 @@
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
-    "version": "1.0.0.5",
+    "version": "1.0.0.6",
     "restore": {
       "projectUniqueName": "C:\\FFXIVplugs\\venuestatusandgreet\\VenueStatusAndGreet\\VenueStatusAndGreet.csproj",
       "projectName": "VenueStatusAndGreet",

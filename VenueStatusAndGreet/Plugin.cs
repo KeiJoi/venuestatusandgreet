@@ -88,7 +88,7 @@ public sealed class Plugin : IDalamudPlugin
         this.ApplyTrackingFilters(DateTime.UtcNow);
         this.Tracker.FirstVisitTonightDetected += this.OnFirstVisitTonightDetected;
 
-        this.Greeter = new GreeterService(Log, this.Tracker.IsCurrentlyPresent, this.ExecuteChatCommand);
+        this.Greeter = new GreeterService(Log, this.Tracker.IsCurrentlyPresent, this.ExecuteChatCommand, () => this.Configuration.GreetDelaySeconds);
         this.Greeter.GreetingCompleted += this.OnGreetingCompleted;
         this.SetActivePreset(this.Configuration.ActivePresetId);
 

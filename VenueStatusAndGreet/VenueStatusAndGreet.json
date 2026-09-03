@@ -2,7 +2,7 @@
     "Author":  "kyro_",
     "Name":  "Venue Status and Greet",
     "InternalName":  "VenueStatusAndGreet",
-    "AssemblyVersion":  "1.0.0.5",
+    "AssemblyVersion":  "1.0.0.6",
     "Description":  "Tracks venue guests, greeting history, and nightly statistics with export support.",
     "ApplicableVersion":  "any",
     "DalamudApiLevel":  15,

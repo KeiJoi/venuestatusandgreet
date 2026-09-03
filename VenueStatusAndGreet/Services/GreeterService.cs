@@ -12,19 +12,21 @@ public sealed class GreeterService
     private readonly IPluginLog log;
     private readonly Func<GuestIdentity, bool> canGreetNow;
     private readonly Func<string, bool> executeChatCommand;
+    private readonly Func<int> getGreetDelaySeconds;
 
-    private readonly ConcurrentQueue<GuestIdentity> queue = new();
+    private readonly ConcurrentQueue<QueuedGreeting> queue = new();
     private readonly HashSet<string> queuedKeys = new(StringComparer.OrdinalIgnoreCase);
 
     private GreetPreset? activePreset;
     private GreetingJob? currentJob;
     private DateTime nextJobStartUtc = DateTime.MinValue;
 
-    public GreeterService(IPluginLog log, Func<GuestIdentity, bool> canGreetNow, Func<string, bool> executeChatCommand)
+    public GreeterService(IPluginLog log, Func<GuestIdentity, bool> canGreetNow, Func<string, bool> executeChatCommand, Func<int> getGreetDelaySeconds)
     {
         this.log = log;
         this.canGreetNow = canGreetNow;
         this.executeChatCommand = executeChatCommand;
+        this.getGreetDelaySeconds = getGreetDelaySeconds;
     }
 
     public event Action<GuestIdentity>? GreetingCompleted;
@@ -41,7 +43,7 @@ public sealed class GreeterService
             list.Add(this.currentJob.Guest);
         }
 
-        list.AddRange(this.queue.ToArray());
+        list.AddRange(this.queue.ToArray().Select(static x => x.Guest));
         return list;
     }
 
@@ -88,9 +90,9 @@ public sealed class GreeterService
                 return false;
             }
 
-            this.queue.Enqueue(guest);
+            this.queue.Enqueue(new QueuedGreeting(guest, DateTime.UtcNow));
             this.queuedKeys.Add(guest.Key);
-            this.log.Information($"Queued greeting for {guest.DisplayName}.");
+            this.log.Information($"Queued greeting for {guest.DisplayName} with a {this.GetGreetDelaySeconds()} second delay.");
             return true;
         }
     }
@@ -104,10 +106,12 @@ public sealed class GreeterService
                 return;
             }
 
-            if (!this.queue.TryDequeue(out var nextGuest))
+            if (!this.queue.TryDequeue(out var queuedGreeting))
             {
                 return;
             }
+
+            var nextGuest = queuedGreeting.Guest;
 
             if (this.activePreset is null || !this.activePreset.HasActions)
             {
@@ -122,8 +126,13 @@ public sealed class GreeterService
             }
 
             var steps = BuildSteps(this.activePreset);
-            this.currentJob = new GreetingJob(nextGuest, steps, nowUtc);
+            this.currentJob = new GreetingJob(nextGuest, steps, queuedGreeting.QueuedAtUtc);
             this.log.Information($"Starting greeting job for {nextGuest.DisplayName} with {steps.Length} step(s).");
+        }
+
+        if (this.currentJob.StepIndex == 0 && nowUtc < this.currentJob.QueuedAtUtc.AddSeconds(this.GetGreetDelaySeconds()))
+        {
+            return;
         }
 
         if (nowUtc < this.currentJob.NextSendUtc)
@@ -362,6 +371,11 @@ public sealed class GreeterService
         }
     }
 
+    private int GetGreetDelaySeconds()
+    {
+        return Math.Clamp(this.getGreetDelaySeconds(), 0, 20);
+    }
+
     private void OnGreetingFinished(GuestIdentity guest, DateTime nowUtc)
     {
         lock (this.queuedKeys)
@@ -389,11 +403,12 @@ public sealed class GreeterService
 
     private sealed class GreetingJob
     {
-        public GreetingJob(GuestIdentity guest, GreetingStep[] steps, DateTime nowUtc)
+        public GreetingJob(GuestIdentity guest, GreetingStep[] steps, DateTime queuedAtUtc)
         {
             this.Guest = guest;
             this.Steps = steps;
-            this.NextSendUtc = nowUtc;
+            this.QueuedAtUtc = queuedAtUtc;
+            this.NextSendUtc = queuedAtUtc;
             this.StepIndex = 0;
         }
 
@@ -401,12 +416,16 @@ public sealed class GreeterService
 
         public GreetingStep[] Steps { get; }
 
+        public DateTime QueuedAtUtc { get; }
+
         public int StepIndex { get; set; }
 
         public DateTime NextSendUtc { get; set; }
     }
 
     private readonly record struct GreetingStep(GreetingStepKind Kind, string Content);
+
+    private readonly record struct QueuedGreeting(GuestIdentity Guest, DateTime QueuedAtUtc);
 
     private enum GreetingStepKind
     {
