@@ -673,16 +673,16 @@
     ]
   },
   "packageFolders": {
-    "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\": {},
+    "C:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
-    "version": "1.0.0.4",
+    "version": "1.0.0.5",
     "restore": {
       "projectUniqueName": "C:\\FFXIVplugs\\venuestatusandgreet\\VenueStatusAndGreet\\VenueStatusAndGreet.csproj",
       "projectName": "VenueStatusAndGreet",
       "projectPath": "C:\\FFXIVplugs\\venuestatusandgreet\\VenueStatusAndGreet\\VenueStatusAndGreet.csproj",
-      "packagesPath": "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\",
+      "packagesPath": "C:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\",
       "outputPath": "C:\\FFXIVplugs\\venuestatusandgreet\\VenueStatusAndGreet\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
@@ -1041,5 +1041,17 @@
         }
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.10 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q",
+      "libraryId": "SQLitePCLRaw.lib.e_sqlite3",
+      "targetGraphs": [
+        "net10.0-windows7.0"
+      ]
+    }
+  ]
 }

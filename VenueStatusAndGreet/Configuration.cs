@@ -24,6 +24,8 @@ public sealed class Configuration : IPluginConfiguration
 
     public bool UseDistanceFilter { get; set; } = true;
 
+    public bool UseOutdoorVenueArea { get; set; }
+
     public float VenueRadiusYalms { get; set; } = 35f;
 
     public bool AutoDetectVenueAddress { get; set; } = true;

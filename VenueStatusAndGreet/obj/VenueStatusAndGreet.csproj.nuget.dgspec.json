@@ -5,12 +5,12 @@
   },
   "projects": {
     "C:\\FFXIVplugs\\venuestatusandgreet\\VenueStatusAndGreet\\VenueStatusAndGreet.csproj": {
-      "version": "1.0.0.4",
+      "version": "1.0.0.5",
       "restore": {
         "projectUniqueName": "C:\\FFXIVplugs\\venuestatusandgreet\\VenueStatusAndGreet\\VenueStatusAndGreet.csproj",
         "projectName": "VenueStatusAndGreet",
         "projectPath": "C:\\FFXIVplugs\\venuestatusandgreet\\VenueStatusAndGreet\\VenueStatusAndGreet.csproj",
-        "packagesPath": "c:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\",
+        "packagesPath": "C:\\FFXIVplugs\\venuestatusandgreet\\.dotnet\\.nuget\\packages\\",
         "outputPath": "C:\\FFXIVplugs\\venuestatusandgreet\\VenueStatusAndGreet\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [

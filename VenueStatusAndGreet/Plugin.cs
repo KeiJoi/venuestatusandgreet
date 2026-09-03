@@ -237,6 +237,7 @@ public sealed class Plugin : IDalamudPlugin
         this.Tracker.SetFilters(
             this.Configuration.LockToOpenTerritory,
             this.Configuration.UseDistanceFilter,
+            this.Configuration.UseOutdoorVenueArea,
             this.Configuration.VenueRadiusYalms,
             this.Configuration.TrackingPollIntervalSeconds,
             nowUtc);

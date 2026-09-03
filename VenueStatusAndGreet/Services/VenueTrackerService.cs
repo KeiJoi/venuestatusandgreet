@@ -44,7 +44,11 @@ public sealed class VenueTrackerService
 
     public bool UseDistanceFilter { get; private set; } = true;
 
+    public bool UseOutdoorVenueArea { get; private set; }
+
     public float VenueRadiusYalms { get; private set; } = 35f;
+
+    public Vector3? OutdoorVenueCenter { get; private set; }
 
     public int TrackingPollIntervalSeconds { get; private set; } = 900;
 
@@ -59,12 +63,23 @@ public sealed class VenueTrackerService
         this.database.SetVenueInfo(this.VenueName, this.VenueAddress, nowUtc);
     }
 
-    public void SetFilters(bool lockToOpenTerritory, bool useDistanceFilter, float venueRadiusYalms, int trackingPollIntervalSeconds, DateTime nowUtc)
+    public void SetFilters(bool lockToOpenTerritory, bool useDistanceFilter, bool useOutdoorVenueArea, float venueRadiusYalms, int trackingPollIntervalSeconds, DateTime nowUtc)
     {
+        var switchingToOutdoorArea = useOutdoorVenueArea && !this.UseOutdoorVenueArea;
         this.LockToOpenTerritory = lockToOpenTerritory;
         this.UseDistanceFilter = useDistanceFilter;
+        this.UseOutdoorVenueArea = useOutdoorVenueArea;
         this.VenueRadiusYalms = Math.Clamp(venueRadiusYalms, 5f, 150f);
         this.TrackingPollIntervalSeconds = Math.Clamp(trackingPollIntervalSeconds, 5, 3600);
+
+        if (!this.UseOutdoorVenueArea)
+        {
+            this.OutdoorVenueCenter = null;
+        }
+        else if (switchingToOutdoorArea && this.VenueOpen)
+        {
+            this.CaptureOutdoorVenueCenter();
+        }
 
         if (!this.LockToOpenTerritory)
         {
@@ -84,6 +99,7 @@ public sealed class VenueTrackerService
         this.database.StartVenueSession(this.VenueName, this.VenueAddress, nowUtc);
         this.VenueOpen = true;
         this.LockedTerritoryId = this.LockToOpenTerritory ? this.clientState.TerritoryType : null;
+        this.CaptureOutdoorVenueCenter();
         this.PrepareForOpen();
     }
 
@@ -97,6 +113,7 @@ public sealed class VenueTrackerService
 
         this.VenueOpen = true;
         this.LockedTerritoryId = this.LockToOpenTerritory ? this.clientState.TerritoryType : null;
+        this.CaptureOutdoorVenueCenter();
         this.PrepareForOpen();
         return true;
     }
@@ -199,11 +216,24 @@ public sealed class VenueTrackerService
         this.suppressNextScanNotifications = true;
     }
 
+    private void CaptureOutdoorVenueCenter()
+    {
+        this.OutdoorVenueCenter = this.UseOutdoorVenueArea
+            ? this.objectTable.LocalPlayer?.Position
+            : null;
+
+        if (this.UseOutdoorVenueArea && this.OutdoorVenueCenter is null)
+        {
+            this.log.Warning("Outdoor venue area is enabled, but no local player position is available to set the radius center.");
+        }
+    }
+
     private void ApplyClosedState()
     {
         this.currentlyPresent.Clear();
         this.identityLookup.Clear();
         this.objectIdLookup.Clear();
+        this.OutdoorVenueCenter = null;
         this.suppressNextScanNotifications = false;
         this.lastPresenceScanUtc = DateTime.MinValue;
     }
@@ -221,9 +251,17 @@ public sealed class VenueTrackerService
                 continue;
             }
 
-            if (this.UseDistanceFilter && localPlayer is not null)
+            var radiusCenter = this.UseOutdoorVenueArea
+                ? this.OutdoorVenueCenter
+                : this.UseDistanceFilter ? localPlayer?.Position : null;
+            if (this.UseOutdoorVenueArea && radiusCenter is null)
             {
-                var distance = Vector3.Distance(localPlayer.Position, player.Position);
+                continue;
+            }
+
+            if (radiusCenter is Vector3 center)
+            {
+                var distance = Vector3.Distance(center, player.Position);
                 if (distance > this.VenueRadiusYalms)
                 {
                     continue;

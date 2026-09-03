@@ -283,11 +283,28 @@ public sealed class MainWindow : Window, IDisposable
             this.plugin.ApplyTrackingFilters(DateTime.UtcNow);
         }
 
-        var useDistanceFilter = this.plugin.Configuration.UseDistanceFilter;
-        if (ImGui.Checkbox("Use Venue Radius", ref useDistanceFilter))
+        var useOutdoorVenueArea = this.plugin.Configuration.UseOutdoorVenueArea;
+        if (ImGui.Checkbox("Outdoor Event Area (Fixed Radius)", ref useOutdoorVenueArea))
         {
-            this.plugin.Configuration.UseDistanceFilter = useDistanceFilter;
+            this.plugin.Configuration.UseOutdoorVenueArea = useOutdoorVenueArea;
+            if (useOutdoorVenueArea)
+            {
+                this.plugin.Configuration.UseDistanceFilter = true;
+            }
+
             this.plugin.ApplyTrackingFilters(DateTime.UtcNow);
+        }
+
+        ImGui.TextDisabled("For outdoor events, the radius is fixed at your position when the venue is opened or resumed.");
+
+        if (!useOutdoorVenueArea)
+        {
+            var useDistanceFilter = this.plugin.Configuration.UseDistanceFilter;
+            if (ImGui.Checkbox("Use Venue Radius", ref useDistanceFilter))
+            {
+                this.plugin.Configuration.UseDistanceFilter = useDistanceFilter;
+                this.plugin.ApplyTrackingFilters(DateTime.UtcNow);
+            }
         }
 
         var radius = this.plugin.Configuration.VenueRadiusYalms;
